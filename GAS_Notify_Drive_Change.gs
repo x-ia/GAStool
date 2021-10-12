@@ -4,11 +4,12 @@
 // #     and notifying changed via E-mail                      #
 // #                                                           #
 // #  1st release: 2021-10-06  by Y.Kosaka                     #
-// #  Last update: 2021-10-11  by Y.Kosaka                     #
+// #  Last update: 2021-10-12  by Y.Kosaka                     #
 // #  See more information :                                   #
 // #    https://riskinlife.com/ja/gas-notify-drive-change      #
 // #############################################################
 
+var K = 0;
         // Sheet name for listing files (Please see the bottom bar of Spreadsheet)
 const SHEET_NAME_OF_CONTROL = "control";
         // Row number for cell range of GDrive file attributes to collect
@@ -24,6 +25,7 @@ const FLAG_IGNORE  = -2;
 const LINE_BUF     = 100;
 const URL_PREFIX   = "https://drive.google.com/file/d/";
 const URL_POSTFIX  = "/view";
+const CHR_NOSUB    = "/";
 
         // Open lists file on Spreadsheet
 //var SPREADSHEET_4_LISTS = SpreadsheetApp.openById(SHEET_ID_OF_LISTS);
@@ -37,6 +39,17 @@ var MAIL_ADDRESS_2_NOTIFY = SHEET_4_CONTROL.getRange(2, COL_VAL).getValues();
 
         // Variable for incrementing row No.
 var J = 0;
+
+        // Function for outputting logs
+function debugFunc(lineno, varname, description, code){
+  Logger.log("LOGGING BEGIN (log id: " + K + ", line no.: " + lineno + ")");
+  Logger.log("line No." + lineno);
+  Logger.log(description + ":");
+  Logger.log(varname);
+  Logger.log("```\n" + code + "\n```");
+  Logger.log("LOGGING END (log id: " + K + ", line no.: " + lineno + ")");
+  K++;
+}
 
         // Function for adding action menu
 function onOpen(){
@@ -73,30 +86,34 @@ function setNameSearch(driveFolderSearch){
 }
 
         // Function for getting file IDs in the folder from Google Drive recursively
-function getListDriveFileIdFunc(driveFolderSearch){
+function getListDriveFileIdFunc(driveFolderSearch, nameSearch){
   var listDriveFileId = [];
   var arrFiles = driveFolderSearch.getFiles();
-          putProgressFunc("Getting file IDs from GDrive (" + arrFiles.length + " files)", ROW_FOLDERS + J);
         // Getting IDs of files
+          putProgressFunc("Getting file IDs from GDrive", ROW_FOLDERS + J);
   while(arrFiles.hasNext()){
     listDriveFileId.push(arrFiles.next().getId());
   }
+
+  if( nameSearch.indexOf(CHR_NOSUB) < 0){
         // Getting IDs of folders
-  var arrFolderSub = driveFolderSearch.getFolders();
+    var arrFolderSub = driveFolderSearch.getFolders();
           putProgressFunc("Getting folder IDs from GDrive (" + arrFolderSub.length + " folders)", ROW_FOLDERS + J);
-  while(arrFolderSub.hasNext()){
-    var folderSub = arrFolderSub.next();
-    listDriveFileId = listDriveFileId.concat( getListDriveFileIdFunc(folderSub) );
+    while(arrFolderSub.hasNext()){
+      var folderSub = arrFolderSub.next();
+      listDriveFileId = listDriveFileId.concat( getListDriveFileIdFunc(folderSub, nameSearch) );
+    }
   }
+
   return listDriveFileId;
 }
 
         // Function for getting file IDs in the folder recursively
-function getMapDriveFile(driveFolderSearch){
+function getMapDriveFile(driveFolderSearch, nameSearch){
   var arrFolder = driveFolderSearch.getFolders();
   var arrFile = driveFolderSearch.getFiles();
 
-  var arrFileId = getListDriveFileIdFunc(driveFolderSearch);
+  var arrFileId = getListDriveFileIdFunc(driveFolderSearch, nameSearch);
   var mapDriveFiles = {};
         // Iteration for getting attributes of each files
   arrFileId.forEach(
@@ -285,7 +302,7 @@ function putMapDriveFileFunc(mapDriveFiles, mapFileList, sheetFiles, arrHeader){
 
         // Function for filling files list and getting changed entries
 function genFolderChangedFunc(driveFolderSearch, nameSearch){
-  var mapDriveFiles = getMapDriveFile(driveFolderSearch);
+  var mapDriveFiles = getMapDriveFile(driveFolderSearch, nameSearch);
         // Getting combination os file attributes to collect
   var arrHeader = getHeaderFunc();
         // Getting list of files from Spreadsheet
@@ -320,6 +337,7 @@ function setMsgNotifyFunc(mapFolderChanged){
       msgNotify += DriveApp.getFileById(item.parentId);
     }
     catch(e){
+          debugFunc(383, e, "Error", "(omitted)");
       msgNotify += "(missing folder)";
     }
 
