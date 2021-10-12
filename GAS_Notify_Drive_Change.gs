@@ -89,7 +89,6 @@ function setNameSearch(driveFolderSearch){
 function getListDriveFileIdFunc(driveFolderSearch, nameSearch){
   var listDriveFileId = [];
   var arrFiles = driveFolderSearch.getFiles();
-          debugFunc(98, arrFiles, "arrFiles", arguments.callee);
         // Getting IDs of files
           putProgressFunc("Getting file IDs from GDrive", ROW_FOLDERS + J);
   while(arrFiles.hasNext()){
