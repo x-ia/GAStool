@@ -89,6 +89,7 @@ function setNameSearch(driveFolderSearch){
 function getListDriveFileIdFunc(driveFolderSearch, nameSearch){
   var listDriveFileId = [];
   var arrFiles = driveFolderSearch.getFiles();
+          debugFunc(98, arrFiles, "arrFiles", arguments.callee);
         // Getting IDs of files
           putProgressFunc("Getting file IDs from GDrive", ROW_FOLDERS + J);
   while(arrFiles.hasNext()){
@@ -147,9 +148,12 @@ function setSheetFunc(sheetName, arrHeader){
   if(!sheet){
     sheet = SPREADSHEET_4_LISTS.insertSheet();
     sheet.setName(sheetName);
-    sheet.getRange(1, 1).setValue("id");
+    sheet.getRange(1, 1).setValue("fileId");
     sheet.getRange(1, 2).setValue("flag");
-    sheet.getRange(1, 3, 1, arrHeader[0].length).setValues(arrHeader);
+    sheet.getRange(1, 3).setValue("fileName");
+    sheet.getRange(1, 4).setValue("timestamp");
+    sheet.getRange(1, 5).setValue("parentId");
+    sheet.getRange(1, 6, 1, arrHeader[0].length).setValues(arrHeader);
   }
   return sheet;
 }
@@ -189,7 +193,13 @@ function checkChangeFunc(previous, present){
         // Definition for generating function for getting custom file attribute
 function getFileAttrFuncSub(file, attr){
   let genFuncAttr = new Function('file', 'return file.' + attr);
-  return genFuncAttr(file);
+  try{
+    return genFuncAttr(file);
+  }
+  catch(e){
+          debugFunc(231, e, "Error", arguments.callee);
+    return "-";
+  }
 }
 
         // Sub function for getting file attributes
@@ -337,7 +347,7 @@ function setMsgNotifyFunc(mapFolderChanged){
       msgNotify += DriveApp.getFileById(item.parentId);
     }
     catch(e){
-          debugFunc(383, e, "Error", "(omitted)");
+          debugFunc(409, e, "Error", arguments.callee);
       msgNotify += "(missing folder)";
     }
 
